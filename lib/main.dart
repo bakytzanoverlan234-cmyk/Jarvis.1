@@ -34,7 +34,9 @@ class _JarvisHomeState extends State<JarvisHome> {
   final FlutterTts tts = FlutterTts();
   final stt.SpeechToText speech = stt.SpeechToText();
 
-  String status = "Скажи: брат...";
+  final TextEditingController textController = TextEditingController();
+  List<String> messages = [];
+
   bool listening = false;
 
   @override
@@ -46,32 +48,39 @@ class _JarvisHomeState extends State<JarvisHome> {
   }
 
   Future<void> requestMicPermission() async {
-    var perm = await Permission.microphone.status;
-    if (!perm.isGranted) {
+    if (!await Permission.microphone.isGranted) {
       await Permission.microphone.request();
     }
   }
 
+  Future<void> processText(String text) async {
+    if (text.isEmpty) return;
+
+    setState(() {
+      messages.add("Ты: $text");
+    });
+
+    String response = await ai.respond(text);
+
+    setState(() {
+      messages.add("Jarvis: $response");
+    });
+
+    await tts.speak(response);
+  }
+
   void startListening() async {
     bool available = await speech.initialize();
-    if (!available) {
-      setState(() => status = "Микрофон недоступен");
-      return;
-    }
+    if (!available) return;
 
     setState(() => listening = true);
 
     speech.listen(onResult: (result) async {
       String text = result.recognizedWords;
 
-      if (jarvis.wakeWord(text)) {
-        setState(() => status = "Jarvis активирован");
-        return;
-      }
+      if (jarvis.wakeWord(text)) return;
 
-      String response = await ai.respond(text);
-      setState(() => status = response);
-      await tts.speak(response);
+      await processText(text);
     });
   }
 
@@ -84,23 +93,49 @@ class _JarvisHomeState extends State<JarvisHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              status,
-              style: const TextStyle(color: Colors.cyan, fontSize: 20),
-              textAlign: TextAlign.center,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    messages[index],
+                    style: const TextStyle(color: Colors.cyan, fontSize: 16),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 40),
-            FloatingActionButton(
-              backgroundColor: listening ? Colors.red : Colors.cyan,
-              onPressed: listening ? stopListening : startListening,
-              child: Icon(listening ? Icons.stop : Icons.mic),
-            ),
-          ],
-        ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: textController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: "Напиши Jarvis...",
+                    hintStyle: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, color: Colors.cyan),
+                onPressed: () {
+                  processText(textController.text);
+                  textController.clear();
+                },
+              ),
+              FloatingActionButton(
+                backgroundColor: listening ? Colors.red : Colors.cyan,
+                onPressed: listening ? stopListening : startListening,
+                child: Icon(listening ? Icons.stop : Icons.mic),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
