@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'core/jarvis_engine.dart';
 import 'core/hybrid_ai.dart';
+import 'core/jarvis_engine.dart';
 
 void main() {
-  runApp(const JarvisApp());
+  runApp(const ErekeAI());
 }
 
-class JarvisApp extends StatelessWidget {
-  const JarvisApp({super.key});
+class ErekeAI extends StatelessWidget {
+  const ErekeAI({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: const ChatScreen(),
+      home: ChatScreen(),
     );
   }
 }
@@ -29,13 +28,14 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController controller = TextEditingController();
   final JarvisEngine jarvis = JarvisEngine();
   final HybridAI ai = HybridAI();
   final FlutterTts tts = FlutterTts();
   final stt.SpeechToText speech = stt.SpeechToText();
 
-  List<Map<String, String>> messages = [];
+  final TextEditingController controller = TextEditingController();
+
+  List<String> messages = [];
   bool listening = false;
 
   @override
@@ -45,41 +45,50 @@ class _ChatScreenState extends State<ChatScreen> {
     tts.setSpeechRate(0.5);
   }
 
-  void sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
-
-    setState(() {
-      messages.add({"role": "user", "text": text});
-    });
-
-    controller.clear();
-
-    String response = await ai.respond(text);
-
-    setState(() {
-      messages.add({"role": "ai", "text": response});
-    });
-
-    await tts.speak(response);
-  }
-
-  void startListening() async {
+  Future<void> startListening() async {
     bool available = await speech.initialize();
     if (!available) return;
 
     setState(() => listening = true);
 
-    speech.listen(onResult: (result) {
+    speech.listen(onResult: (result) async {
       String text = result.recognizedWords;
-      if (text.isNotEmpty) {
-        sendMessage(text);
+
+      if (jarvis.wakeWord(text)) {
+        setState(() => messages.add("Jarvis активирован"));
+        return;
       }
+
+      String response = await ai.respond(text);
+
+      setState(() {
+        messages.add("Ты: $text");
+        messages.add("Ereke AI: $response");
+      });
+
+      await tts.speak(response);
     });
   }
 
   void stopListening() {
     speech.stop();
     setState(() => listening = false);
+  }
+
+  Future<void> sendText() async {
+    String text = controller.text;
+    if (text.isEmpty) return;
+
+    controller.clear();
+
+    String response = await ai.respond(text);
+
+    setState(() {
+      messages.add("Ты: $text");
+      messages.add("Ereke AI: $response");
+    });
+
+    await tts.speak(response);
   }
 
   @override
@@ -93,34 +102,20 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
-                final isUser = msg["role"] == "user";
-
-                return Align(
-                  alignment:
-                      isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 5),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? Colors.cyanAccent.withOpacity(0.8)
-                          : Colors.grey.shade800,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      msg["text"]!,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+            child: ListView(
+              padding: const EdgeInsets.all(10),
+              children: messages.map((msg) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    msg,
+                    style: const TextStyle(color: Colors.cyan),
                   ),
                 );
-              },
+              }).toList(),
             ),
           ),
+
           Row(
             children: [
               Expanded(
@@ -128,23 +123,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   controller: controller,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
-                    hintText: "Напиши Jarvis...",
-                    hintStyle: TextStyle(color: Colors.white54),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(12),
+                    hintText: "Напиши Ereke AI...",
+                    hintStyle: TextStyle(color: Colors.grey),
                   ),
-                  onSubmitted: sendMessage,
                 ),
               ),
+
               IconButton(
-                icon: const Icon(Icons.send, color: Colors.cyanAccent),
-                onPressed: () => sendMessage(controller.text),
+                icon: const Icon(Icons.send, color: Colors.cyan),
+                onPressed: sendText,
               ),
+
               IconButton(
-                icon: Icon(
-                  listening ? Icons.stop : Icons.mic,
-                  color: listening ? Colors.red : Colors.cyanAccent,
-                ),
+                icon: Icon(listening ? Icons.stop : Icons.mic, color: Colors.cyan),
                 onPressed: listening ? stopListening : startListening,
               ),
             ],
