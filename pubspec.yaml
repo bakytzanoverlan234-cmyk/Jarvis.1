@@ -15,6 +15,7 @@ dependencies:
   flutter_tts: ^3.8.5
   connectivity_plus: ^6.0.5
   permission_handler: ^11.3.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
