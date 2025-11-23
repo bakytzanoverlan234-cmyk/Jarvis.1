@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'core/hybrid_ai.dart';
-import 'core/jarvis_engine.dart';
 
-void main() {
-  runApp(const ErekeAI());
-}
+void main() => runApp(const ErekeAI());
 
 class ErekeAI extends StatelessWidget {
   const ErekeAI({super.key});
@@ -28,20 +25,37 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final JarvisEngine jarvis = JarvisEngine();
   final HybridAI ai = HybridAI();
   final FlutterTts tts = FlutterTts();
   final stt.SpeechToText speech = stt.SpeechToText();
 
   final TextEditingController controller = TextEditingController();
-  List<String> messages = [];
+
+  List<Map<String, String>> messages = [];
   bool listening = false;
+  bool typing = false;
 
   @override
   void initState() {
     super.initState();
     tts.setLanguage("ru-RU");
-    tts.setSpeechRate(0.5);
+    tts.setSpeechRate(0.45);
+  }
+
+  Future<void> sendText(String text) async {
+    setState(() {
+      messages.add({"role": "user", "text": text});
+      typing = true;
+    });
+
+    String response = await ai.respond(text);
+
+    setState(() {
+      messages.add({"role": "ai", "text": response});
+      typing = false;
+    });
+
+    await tts.speak(response);
   }
 
   Future<void> startListening() async {
@@ -50,37 +64,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() => listening = true);
 
-    speech.listen(onResult: (result) async {
-      if (!result.finalResult) return;
-
-      String text = result.recognizedWords;
-
-      setState(() => messages.add("Ты: $text"));
-
-      String response = await ai.respond(text);
-
-      setState(() => messages.add("Ereke AI: $response"));
-      await tts.speak(response);
+    speech.listen(onResult: (result) {
+      if (result.finalResult) {
+        sendText(result.recognizedWords);
+        speech.stop();
+        setState(() => listening = false);
+      }
     });
-  }
-
-  void stopListening() {
-    speech.stop();
-    setState(() => listening = false);
-  }
-
-  Future<void> sendText() async {
-    String text = controller.text.trim();
-    if (text.isEmpty) return;
-
-    controller.clear();
-
-    setState(() => messages.add("Ты: $text"));
-
-    String response = await ai.respond(text);
-
-    setState(() => messages.add("Ereke AI: $response"));
-    await tts.speak(response);
   }
 
   @override
@@ -95,16 +85,44 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.all(10),
               itemCount: messages.length,
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  messages[i],
-                  style: const TextStyle(color: Colors.cyan, fontSize: 16),
-                ),
-              ),
+              itemBuilder: (context, i) {
+                final msg = messages[i];
+                bool isUser = msg["role"] == "user";
+
+                return Align(
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.all(12),
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    decoration: BoxDecoration(
+                      color: isUser
+                          ? Colors.cyan.withOpacity(0.3)
+                          : Colors.deepPurple.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      msg["text"]!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
+
+          if (typing)
+            const Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                "Ereke AI печатает...",
+                style: TextStyle(color: Colors.cyan),
+              ),
+            ),
+
           Row(
             children: [
               Expanded(
@@ -119,14 +137,19 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.send, color: Colors.cyan),
-                onPressed: sendText,
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    sendText(controller.text);
+                    controller.clear();
+                  }
+                },
               ),
               IconButton(
                 icon: Icon(
                   listening ? Icons.stop : Icons.mic,
                   color: Colors.cyan,
                 ),
-                onPressed: listening ? stopListening : startListening,
+                onPressed: startListening,
               ),
             ],
           ),
