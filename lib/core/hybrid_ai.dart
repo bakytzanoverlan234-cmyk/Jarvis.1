@@ -37,8 +37,10 @@ class HybridAI {
           "Content-Type": "application/json",
         },
         body: jsonEncode({
-          "model": "llama3-70b-8192",
+          "model": "llama-3.1-70b-versatile",
           "messages": _history,
+          "temperature": 0.7,
+          "max_tokens": 2048
         }),
       );
 
