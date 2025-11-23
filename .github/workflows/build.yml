@@ -18,6 +18,9 @@ jobs:
         with:
           flutter-version: '3.22.0'
 
+      - name: Regenerate Android project (v2 embedding)
+        run: flutter create . --platforms=android --project-name jarvis_assistant
+
       - name: Install dependencies
         run: flutter pub get
 
