@@ -1,33 +1,53 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'music_engine.dart';
+import 'jarvis_persona.dart';
 
 class HybridAI {
   static const String apiKey = String.fromEnvironment('GROQ_API_KEY');
   static const String apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
   final List<Map<String, String>> _history = [];
+  final MusicEngine music = MusicEngine();
+  final JarvisPersona persona = JarvisPersona();
 
-  /// Очистка памяти диалога
   void clearHistory() {
     _history.clear();
   }
 
   Future<String> respond(String prompt) async {
-    if (apiKey.isEmpty) {
-      return "API ключ Groq не задан";
+    final lower = prompt.toLowerCase();
+
+    // Музыкальный режим
+    if (lower.contains("музыка") || lower.contains("бит") || lower.contains("трек")) {
+      return music.generateMusicDescription();
     }
 
-    _history.add({"role": "user", "content": prompt});
+    if (apiKey.isEmpty) {
+      return "❌ API ключ Groq не установлен";
+    }
+
+    if (_history.isEmpty) {
+      _history.add({
+        "role": "system",
+        "content": persona.systemPrompt,
+      });
+    }
+
+    _history.add({
+      "role": "user",
+      "content": prompt,
+    });
 
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $apiKey",
         },
         body: jsonEncode({
-          "model": "llama3-8b-8192",
+          "model": "llama3-70b-8192",
           "messages": _history,
           "temperature": 0.7
         }),
@@ -40,9 +60,12 @@ class HybridAI {
       final data = jsonDecode(response.body);
       final reply = data['choices'][0]['message']['content'];
 
-      _history.add({"role": "assistant", "content": reply});
+      _history.add({
+        "role": "assistant",
+        "content": reply,
+      });
 
-      return reply.trim();
+      return reply.toString().trim();
     } catch (e) {
       return "Ошибка ИИ: $e";
     }
