@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:permission_handler/permission_handler.dart';
 import 'core/hybrid_ai.dart';
 import 'core/jarvis_engine.dart';
 
@@ -35,30 +34,14 @@ class _ChatScreenState extends State<ChatScreen> {
   final stt.SpeechToText speech = stt.SpeechToText();
 
   final TextEditingController controller = TextEditingController();
-
   List<String> messages = [];
   bool listening = false;
 
   @override
   void initState() {
     super.initState();
-    initSpeech();
-  }
-
-  Future<void> initSpeech() async {
-    await Permission.microphone.request();
-
-    await tts.setLanguage("ru-RU");
-    await tts.setSpeechRate(0.5);
-
-    await speech.initialize(
-      onStatus: (status) {
-        print("Speech status: $status");
-      },
-      onError: (error) {
-        print("Speech error: $error");
-      },
-    );
+    tts.setLanguage("ru-RU");
+    tts.setSpeechRate(0.5);
   }
 
   Future<void> startListening() async {
@@ -72,20 +55,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
       String text = result.recognizedWords;
 
-      if (jarvis.wakeWord(text)) {
-        setState(() {
-          messages.add("✅ Ereke AI активирован");
-        });
-        return;
-      }
+      setState(() => messages.add("Ты: $text"));
 
       String response = await ai.respond(text);
 
-      setState(() {
-        messages.add("Ты: $text");
-        messages.add("Ereke AI: $response");
-      });
-
+      setState(() => messages.add("Ereke AI: $response"));
       await tts.speak(response);
     });
   }
@@ -101,13 +75,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     controller.clear();
 
+    setState(() => messages.add("Ты: $text"));
+
     String response = await ai.respond(text);
 
-    setState(() {
-      messages.add("Ты: $text");
-      messages.add("Ereke AI: $response");
-    });
-
+    setState(() => messages.add("Ereke AI: $response"));
     await tts.speak(response);
   }
 
@@ -123,51 +95,40 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(12),
               itemCount: messages.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    messages[index],
-                    style: const TextStyle(
-                      color: Colors.cyan,
-                      fontSize: 16,
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (_, i) => Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  messages[i],
+                  style: const TextStyle(color: Colors.cyan, fontSize: 16),
+                ),
+              ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: Colors.black,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: "Напиши Ereke AI...",
-                      hintStyle: TextStyle(color: Colors.grey),
-                      border: InputBorder.none,
-                    ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    hintText: "Напиши Ereke AI...",
+                    hintStyle: TextStyle(color: Colors.grey),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.cyan),
-                  onPressed: sendText,
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, color: Colors.cyan),
+                onPressed: sendText,
+              ),
+              IconButton(
+                icon: Icon(
+                  listening ? Icons.stop : Icons.mic,
+                  color: Colors.cyan,
                 ),
-                IconButton(
-                  icon: Icon(
-                    listening ? Icons.stop : Icons.mic,
-                    color: listening ? Colors.red : Colors.cyan,
-                  ),
-                  onPressed: listening ? stopListening : startListening,
-                ),
-              ],
-            ),
+                onPressed: listening ? stopListening : startListening,
+              ),
+            ],
           ),
         ],
       ),
