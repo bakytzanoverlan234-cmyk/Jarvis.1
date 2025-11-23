@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
         },
         orElse: () => voices.first,
       );
-      await tts.setVoice(match);
+      await tts.setVoice(Map<String, String>.from(match));
     }
 
     tts.setCompletionHandler(() {
@@ -287,7 +287,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       messages.clear();
     });
-    await ai.clearHistory();
+    ai.clearHistory();
     await _saveHistory();
   }
 
@@ -602,12 +602,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF050814),
         title: const Text('Настройки Ereke AI'),
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
             title: const Text('Автоозвучка ответов'),
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
             value: _voiceEnabled,
             onChanged: (v) {
               setState(() => _voiceEnabled = v);
@@ -616,6 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
             'Голос',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -624,6 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               ChoiceChip(
                 label: const Text('Женский'),
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
                 selected: _voiceGender == 'female',
                 onSelected: (_) {
                   setState(() => _voiceGender = 'female');
@@ -633,6 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(width: 8),
               ChoiceChip(
                 label: const Text('Мужской'),
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
                 selected: _voiceGender == 'male',
                 onSelected: (_) {
                   setState(() => _voiceGender = 'male');
@@ -643,6 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 20),
           const Text(
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
             'Скорость речи',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -659,15 +665,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 20),
           const Text(
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
             'Музыка и картинки',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
+            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
             'Сейчас Ereke AI генерирует тексты песен, аккорды и промпты '
             'для изображений. Для реальной генерации аудио и картинок '
             'нужно подключить отдельные API (Suno,
-            Stable Audio, DALL·E и т.п.).',
             style: TextStyle(color: Colors.white70),
           ),
         ],
