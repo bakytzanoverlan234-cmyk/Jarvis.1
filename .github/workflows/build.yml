@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Ereke AI APK
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
@@ -18,19 +18,17 @@ jobs:
         with:
           flutter-version: '3.22.0'
 
-      - name: Regenerate Android project (v2 embedding)
+      - name: Regenerate Android project (fix embedding)
         run: flutter create . --platforms=android --project-name jarvis_assistant
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build Release APK
-        run: flutter build apk --release 
-        --dart-define=GROQ_API_KEY=$
-        {{ secrets.GROQ_API_KEY }}
+        run: flutter build apk --release --dart-define=GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ErekeAI-APK
-          path: build/app/outputs/flutter-apk/app-release.apk  
+          path: build/app/outputs/flutter-apk/app-release.apk
