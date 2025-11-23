@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 import 'core/hybrid_ai.dart';
 
 void main() => runApp(const ErekeAI());
@@ -28,8 +29,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final HybridAI ai = HybridAI();
   final FlutterTts tts = FlutterTts();
   final stt.SpeechToText speech = stt.SpeechToText();
-
   final TextEditingController controller = TextEditingController();
+
+  final ScrollController _scroll = ScrollController();
 
   List<Map<String, String>> messages = [];
   bool listening = false;
@@ -38,27 +40,37 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    tts.setLanguage("ru-RU");
-    tts.setSpeechRate(0.45);
+    _initTts();
   }
 
-  Future<void> sendText(String text) async {
+  Future<void> _initTts() async {
+    await tts.setLanguage("ru-RU");
+    await tts.setSpeechRate(0.45);
+  }
+
+  Future<void> _sendText(String text) async {
+    if (text.trim().isEmpty) return;
+
+    controller.clear();
+
     setState(() {
-      messages.add({"role": "user", "text": text});
+      messages.add({"role": "user", "text": text.trim()});
       typing = true;
     });
+    _scrollToBottom();
 
-    String response = await ai.respond(text);
+    final reply = await ai.respond(text.trim());
 
     setState(() {
-      messages.add({"role": "ai", "text": response});
+      messages.add({"role": "ai", "text": reply});
       typing = false;
     });
+    _scrollToBottom();
 
-    await tts.speak(response);
+    await tts.speak(reply);
   }
 
-  Future<void> startListening() async {
+  Future<void> _startListening() async {
     bool available = await speech.initialize();
     if (!available) return;
 
@@ -66,10 +78,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
     speech.listen(onResult: (result) {
       if (result.finalResult) {
-        sendText(result.recognizedWords);
+        listening = false;
         speech.stop();
-        setState(() => listening = false);
+        _sendText(result.recognizedWords);
+        setState(() {});
       }
+    });
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  void _clearChat() {
+    setState(() {
+      messages.clear();
+      ai.clearHistory();
     });
   }
 
@@ -78,35 +110,47 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Ereke AI"),
         backgroundColor: Colors.black,
+        title: const Text("Ereke AI"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _clearChat,
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scroll,
               padding: const EdgeInsets.all(10),
               itemCount: messages.length,
               itemBuilder: (context, i) {
                 final msg = messages[i];
-                bool isUser = msg["role"] == "user";
+                final isUser = msg["role"] == "user";
 
                 return Align(
                   alignment:
                       isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.all(10),
                     constraints: const BoxConstraints(maxWidth: 280),
                     decoration: BoxDecoration(
                       color: isUser
                           ? Colors.cyan.withOpacity(0.3)
                           : Colors.deepPurple.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isUser ? 16 : 4),
+                        bottomRight: Radius.circular(isUser ? 4 : 16),
+                      ),
                     ),
                     child: Text(
-                      msg["text"]!,
-                      style: const TextStyle(color: Colors.white),
+                      msg["text"] ?? "",
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 );
@@ -116,42 +160,42 @@ class _ChatScreenState extends State<ChatScreen> {
 
           if (typing)
             const Padding(
-              padding: EdgeInsets.all(8),
+              padding: EdgeInsets.only(bottom: 4),
               child: Text(
                 "Ereke AI печатает...",
                 style: TextStyle(color: Colors.cyan),
               ),
             ),
 
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: "Напиши Ereke AI...",
-                    hintStyle: TextStyle(color: Colors.grey),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "Напиши Ereke AI...",
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: _sendText,
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.cyan),
-                onPressed: () {
-                  if (controller.text.isNotEmpty) {
-                    sendText(controller.text);
-                    controller.clear();
-                  }
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  listening ? Icons.stop : Icons.mic,
-                  color: Colors.cyan,
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.cyan),
+                  onPressed: () => _sendText(controller.text),
                 ),
-                onPressed: startListening,
-              ),
-            ],
+                IconButton(
+                  icon: Icon(
+                    listening ? Icons.stop : Icons.mic,
+                    color: Colors.cyan,
+                  ),
+                  onPressed: listening ? speech.stop : _startListening,
+                ),
+              ],
+            ),
           ),
         ],
       ),
