@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'music_engine.dart';
 import 'jarvis_persona.dart';
 
 class HybridAI {
-  static const String apiKey = String.fromEnvironment('OPENAI_API_KEY');
-  final String apiUrl = "https://api.openai.com/v1/chat/completions";
+  static const String apiKey = String.fromEnvironment('OPENROUTER_API_KEY');
+
+  final String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+  final JarvisPersona persona = JarvisPersona();
 
   final List<Map<String, String>> _history = [];
-  final MusicEngine music = MusicEngine();
-  final JarvisPersona persona = JarvisPersona();
 
   void clearHistory() {
     _history.clear();
@@ -17,7 +16,7 @@ class HybridAI {
 
   Future<String> respond(String prompt) async {
     if (apiKey.isEmpty) {
-      return "❌ API ключ OpenAI не найден. Добавь его через --dart-define.";
+      return "❌ OPENROUTER_API_KEY не найден. Проверь dart-define.";
     }
 
     if (_history.isEmpty) {
@@ -35,17 +34,19 @@ class HybridAI {
         headers: {
           "Authorization": "Bearer $apiKey",
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://github.com/bakytzanoverlan234-cmyk/Jarvis.1",
+          "X-Title": "Ereke AI"
         },
         body: jsonEncode({
-          "model": "gpt-4.1-mini",
+          "model": "openai/gpt-4o-mini",
           "messages": _history,
           "temperature": 0.7,
-          "max_tokens": 2048
+          "max_tokens": 1500
         }),
       );
 
       if (response.statusCode != 200) {
-        return "Ошибка OpenAI: ${response.statusCode}\n${response.body}";
+        return "Ошибка OpenRouter: ${response.statusCode}\n${response.body}";
       }
 
       final decoded = jsonDecode(response.body);
@@ -54,7 +55,7 @@ class HybridAI {
       _history.add({"role": "assistant", "content": reply});
       return reply;
     } catch (e) {
-      return "Ошибка соединения с OpenAI: $e";
+      return "Ошибка подключения к OpenRouter: $e";
     }
   }
 }
