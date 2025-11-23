@@ -4,8 +4,8 @@ import 'music_engine.dart';
 import 'jarvis_persona.dart';
 
 class HybridAI {
-  static const String apiKey = String.fromEnvironment('GROQ_API_KEY');
-  final String apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+  static const String apiKey = String.fromEnvironment('OPENAI_API_KEY');
+  final String apiUrl = "https://api.openai.com/v1/chat/completions";
 
   final List<Map<String, String>> _history = [];
   final MusicEngine music = MusicEngine();
@@ -17,7 +17,7 @@ class HybridAI {
 
   Future<String> respond(String prompt) async {
     if (apiKey.isEmpty) {
-      return "❌ API ключ Groq не найден. Проверь dart-define.";
+      return "❌ API ключ OpenAI не найден. Добавь его через --dart-define.";
     }
 
     if (_history.isEmpty) {
@@ -37,7 +37,7 @@ class HybridAI {
           "Content-Type": "application/json",
         },
         body: jsonEncode({
-          "model": "llama3-8b-8192",
+          "model": "gpt-4.1-mini",
           "messages": _history,
           "temperature": 0.7,
           "max_tokens": 2048
@@ -45,7 +45,7 @@ class HybridAI {
       );
 
       if (response.statusCode != 200) {
-        return "Ошибка Groq: ${response.statusCode}\n${response.body}";
+        return "Ошибка OpenAI: ${response.statusCode}\n${response.body}";
       }
 
       final decoded = jsonDecode(response.body);
@@ -54,7 +54,7 @@ class HybridAI {
       _history.add({"role": "assistant", "content": reply});
       return reply;
     } catch (e) {
-      return "Ошибка соединения с Groq: $e";
+      return "Ошибка соединения с OpenAI: $e";
     }
   }
 }
