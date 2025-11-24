@@ -682,3 +682,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
+// rebuild trigger
