@@ -558,19 +558,141 @@ class _ChatScreenState extends State<ChatScreen> {
 
 // --------------------------------------------------
 // ЭКРАН НАСТРОЕК
-// --------------------------------------------------
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool voiceEnabled;
+  final String voiceGender;
+  final double voiceRate;
+  final Future<void> Function(bool, String, double) onChanged;
+
+  const SettingsScreen({
+    super.key,
+    required this.voiceEnabled,
+    required this.voiceGender,
+    required this.voiceRate,
+    required this.onChanged,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool voiceEnabled = true;
-  bool autoRead = false;
-  String selectedVoice = "female";
+  late bool _voiceEnabled;
+  late String _voiceGender;
+  late double _voiceRate;
+
+  @override
+  void initState() {
+    super.initState();
+    _voiceEnabled = widget.voiceEnabled;
+    _voiceGender = widget.voiceGender;
+    _voiceRate = widget.voiceRate;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0E0F1A),
+      appBar: AppBar(
+        title: const Text(
+          "Настройки Ereke AI",
+          style: TextStyle(color: Colors.cyanAccent),
+        ),
+        backgroundColor: Colors.black,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            "Голосовой ассистент",
+            style: TextStyle(
+              color: Colors.cyanAccent,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          SwitchListTile(
+            value: _voiceEnabled,
+            title: const Text(
+              "Озвучивать ответы",
+              style: TextStyle(color: Colors.white),
+            ),
+            onChanged: (v) {
+              setState(() => _voiceEnabled = v);
+            },
+          ),
+
+          const SizedBox(height: 10),
+          const Text("Тип голоса", style: TextStyle(color: Colors.white70)),
+
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            children: [
+              ChoiceChip(
+                label: const Text("Женский"),
+                selected: _voiceGender == "female",
+                onSelected: (_) {
+                  setState(() => _voiceGender = "female");
+                },
+              ),
+              ChoiceChip(
+                label: const Text("Мужской"),
+                selected: _voiceGender == "male",
+                onSelected: (_) {
+                  setState(() => _voiceGender = "male");
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+          const Text(
+            "Скорость речи",
+            style: TextStyle(color: Colors.white70),
+          ),
+          Slider(
+            value: _voiceRate,
+            min: 0.3,
+            max: 1.0,
+            divisions: 7,
+            label: _voiceRate.toStringAsFixed(2),
+            onChanged: (v) {
+              setState(() => _voiceRate = v);
+            },
+          ),
+
+          const SizedBox(height: 20),
+          const Text(
+            "Информация",
+            style: TextStyle(color: Colors.cyanAccent),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "Генерация музыки и изображений будет подключаться через отдельные сервисы. Сейчас работает интеллектуальный чат.",
+            style: TextStyle(color: Colors.white70),
+          ),
+
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () async {
+              await widget.onChanged(
+                _voiceEnabled,
+                _voiceGender,
+                _voiceRate,
+              );
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text("Сохранить настройки"),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
