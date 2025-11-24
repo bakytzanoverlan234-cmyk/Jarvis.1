@@ -292,25 +292,25 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SettingsScreen(
-          voiceEnabled: voiceEnabled,
-          voiceGender: voiceGender,
-          voiceRate: voiceRate,
-          onChanged: (enabled, gender, rate) async {
-            setState(() {
-              voiceEnabled = enabled;
-              voiceGender = gender;
-              voiceRate = rate;
-            });
-            await _saveVoiceSettings();
-            await _initTts();
-          },
-        ),
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => SettingsScreen(
+        voiceEnabled: voiceEnabled,
+        voiceGender: voiceGender,
+        voiceRate: voiceRate,
+        onChanged: (enabled, gender, rate) async {
+          setState(() {
+            voiceEnabled = enabled;
+            voiceGender = gender;
+            voiceRate = rate;
+          });
+          await _saveVoiceSettings();
+          await _initTts();
+        },
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ----------------- UI -----------------
 
