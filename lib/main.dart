@@ -262,7 +262,7 @@ void _scrollToBottom() {
     controller.dispose();
     _scrollController.dispose();
     tts.stop();
-    tts.dispose();
+    tts.stop();
     speech.stop();
     super.dispose();
   }
