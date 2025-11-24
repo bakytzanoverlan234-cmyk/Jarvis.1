@@ -561,119 +561,89 @@ class _ChatScreenState extends State<ChatScreen> {
 // --------------------------------------------------
 
 class SettingsScreen extends StatefulWidget {
-  final bool voiceEnabled;
-  final String voiceGender;
-  final double voiceRate;
-  final void Function(bool enabled, String gender, double rate) onChanged;
-
-  const SettingsScreen({
-    super.key,
-    required this.voiceEnabled,
-    required this.voiceGender,
-    required this.voiceRate,
-    required this.onChanged,
-  });
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late bool _voiceEnabled;
-  late String _voiceGender;
-  late double _voiceRate;
-
-  @override
-  void initState() {
-    super.initState();
-    _voiceEnabled = widget.voiceEnabled;
-    _voiceGender = widget.voiceGender;
-    _voiceRate = widget.voiceRate;
-  }
-
-  void _apply() {
-    widget.onChanged(_voiceEnabled, _voiceGender, _voiceRate);
-  }
+  bool voiceEnabled = true;
+  bool autoRead = false;
+  String selectedVoice = "female";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF050814),
+      backgroundColor: const Color(0xFF0E0F1A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF050814),
-        title: Text('Настройки Ereke AI'),
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
+        title: const Text("Настройки Ereke AI"),
+        backgroundColor: Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const Text(
+            "Голосовой ассистент",
+            style: TextStyle(color: Colors.cyan, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+
           SwitchListTile(
-            title: Text('Автоозвучка ответов'),
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-            value: _voiceEnabled,
+            title: const Text("Включить озвучку", style: TextStyle(color: Colors.white)),
+            value: voiceEnabled,
             onChanged: (v) {
-              setState(() => _voiceEnabled = v);
-              _apply();
+              setState(() => voiceEnabled = v);
             },
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-            'Голос',
-            style: TextStyle(fontWeight: FontWeight.bold),
+
+          SwitchListTile(
+            title: const Text("Читать всё автоматически", style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+              "Ассистент читает любой текст без остановки",
+              style: TextStyle(color: Colors.white70),
+            ),
+            value: autoRead,
+            onChanged: (v) {
+              setState(() => autoRead = v);
+            },
           ),
-          const SizedBox(height: 8),
-          Row(
+
+          const SizedBox(height: 20),
+
+          const Text(
+            "Выбор голоса",
+            style: TextStyle(color: Colors.cyan, fontSize: 16),
+          ),
+
+          Wrap(
+            spacing: 10,
             children: [
               ChoiceChip(
-                label: Text('Женский'),
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-                selected: _voiceGender == 'female',
+                label: const Text("Женский"),
+                selected: selectedVoice == "female",
                 onSelected: (_) {
-                  setState(() => _voiceGender = 'female');
-                  _apply();
+                  setState(() => selectedVoice = "female");
                 },
               ),
-              const SizedBox(width: 8),
               ChoiceChip(
-                label: Text('Мужской'),
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-                selected: _voiceGender == 'male',
+                label: const Text("Мужской"),
+                selected: selectedVoice == "male",
                 onSelected: (_) {
-                  setState(() => _voiceGender = 'male');
-                  _apply();
+                  setState(() => selectedVoice = "male");
                 },
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-            'Скорость речи',
-            style: TextStyle(fontWeight: FontWeight.bold),
+
+          const SizedBox(height: 25),
+
+          const Text(
+            "Информация",
+            style: TextStyle(color: Colors.cyan, fontSize: 16),
           ),
-          Slider(
-            value: _voiceRate,
-            min: 0.3,
-            max: 0.9,
-            divisions: 12,
-            label: _voiceRate.toStringAsFixed(2),
-            onChanged: (v) {
-              setState(() => _voiceRate = v);
-              _apply();
-            },
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-            'Музыка и картинки',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Сейчас Ereke AI генерирует тексты песен и промпты. Для реальной генерации музыки и изображений подключаются отдельные сервисы.',
-            'Сейчас Ereke AI генерирует тексты песен, аккорды и промпты '
-            'для изображений. Для реальной генерации аудио и картинок '
+          const SizedBox(height: 5),
+          const Text(
+            "Генерация музыки и изображений будет подключена через внешние сервисы. Сейчас активен интеллектуальный чат Ereke AI.",
             style: TextStyle(color: Colors.white70),
           ),
         ],
@@ -681,5 +651,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
-// rebuild trigger
